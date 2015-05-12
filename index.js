@@ -6,6 +6,7 @@ var url = require('url')
 var http = require('http')
 var debug = require('debug')('proxy')
 var httpProxy = require('http-proxy')
+var cacheAll = !!process.env.CACHE_ALL
 
 var db = require('mongojs')(process.env.MONGO_URI || 'localhost/http-proxy-cache', ['cache'])
 
@@ -104,7 +105,7 @@ var server = http.createServer(function (req, res) {
     res.end()
     return
   }
-  if (req.method === 'GET' && 'x-cache-preferred' in req.headers) {
+  if (req.method === 'GET' && (cacheAll || 'x-cache-preferred' in req.headers)) {
     db.cache.findOne({ _id: req.url }, function (err, doc) {
       if (err) opbeat.captureError(err)
       if (!doc) return forwardRequest(req, res)
